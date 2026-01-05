@@ -1,3 +1,10 @@
+let availableVoices = [];
+
+speechSynthesis.onvoiceschanged = () => {
+  availableVoices = speechSynthesis.getVoices();
+};
+
+
 const saveButton = document.getElementById("saveScriptBtn");
 const scriptInput = document.getElementById("scriptInput");
 const phrasesContainer = document.getElementById("phrasesContainer");
@@ -69,10 +76,21 @@ function displayEditablePhrases(phrases) {
 }
 
 function speakFrench(text) {
+  if (!text) return;
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "fr-FR";
-  utterance.rate = 0.9; // slightly slower for clarity
+  utterance.rate = 0.9;
+
+  const frenchVoice = availableVoices.find(
+    v => v.lang === "fr-FR" || v.lang.startsWith("fr")
+  );
+
+  if (frenchVoice) {
+    utterance.voice = frenchVoice;
+  }
+
+  speechSynthesis.cancel(); // stop any previous speech
   speechSynthesis.speak(utterance);
 }
-
 
