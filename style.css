@@ -7,7 +7,20 @@ body {
 
 textarea {
   width: 100%;
+  min-height: 160px;
+  padding: 14px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #d0d7de;
+  resize: vertical;
+  line-height: 1.5;
 }
+
+textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
 
 .phrase {
   padding: 10px;
