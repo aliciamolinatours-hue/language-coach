@@ -78,6 +78,9 @@ function displayEditablePhrases(phrases) {
 function speakFrench(text) {
   if (!text) return;
 
+console.log("Speaking:", text);
+console.log("Voices:", availableVoices);
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "fr-FR";
   utterance.rate = 0.9;
