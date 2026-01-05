@@ -2,11 +2,16 @@ const saveButton = document.getElementById("saveScriptBtn");
 const scriptInput = document.getElementById("scriptInput");
 const phrasesContainer = document.getElementById("phrasesContainer");
 
-// Load saved script on page load
+// Load saved phrases or script on page load
+const savedPhrases = JSON.parse(localStorage.getItem("phrases"));
 const savedScript = localStorage.getItem("script");
-if (savedScript) {
+
+if (savedPhrases && savedPhrases.length > 0) {
+  displayEditablePhrases(savedPhrases);
+} else if (savedScript) {
   scriptInput.value = savedScript;
-  displayPhrases(savedScript);
+  const phrases = splitIntoPhrases(savedScript);
+  displayEditablePhrases(phrases);
 }
 
 // Save & split script
@@ -18,23 +23,38 @@ saveButton.addEventListener("click", () => {
     return;
   }
 
+  const phrases = splitIntoPhrases(scriptText);
   localStorage.setItem("script", scriptText);
-  displayPhrases(scriptText);
+  localStorage.setItem("phrases", JSON.stringify(phrases));
+  displayEditablePhrases(phrases);
 });
 
-// Function to split and display phrases
-function displayPhrases(text) {
-  phrasesContainer.innerHTML = ""; // clear previous phrases
+// --- Helper functions ---
 
-  const phrases = text
+function splitIntoPhrases(text) {
+  return text
     .split("\n")
     .map(p => p.trim())
     .filter(p => p !== "");
+}
+
+function displayEditablePhrases(phrases) {
+  phrasesContainer.innerHTML = "";
 
   phrases.forEach((phrase, index) => {
-    const phraseDiv = document.createElement("div");
-    phraseDiv.className = "phrase";
-    phraseDiv.textContent = `${index + 1}. ${phrase}`;
-    phrasesContainer.appendChild(phraseDiv);
+    const phraseWrapper = document.createElement("div");
+    phraseWrapper.className = "phrase";
+
+    const textarea = document.createElement("textarea");
+    textarea.value = phrase;
+    textarea.rows = 2;
+
+    textarea.addEventListener("change", () => {
+      phrases[index] = textarea.value;
+      localStorage.setItem("phrases", JSON.stringify(phrases));
+    });
+
+    phraseWrapper.appendChild(textarea);
+    phrasesContainer.appendChild(phraseWrapper);
   });
 }
