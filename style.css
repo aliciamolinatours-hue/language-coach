@@ -30,3 +30,16 @@ textarea {
   background: #eef3fb;
 }
 
+.phrase {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.phrase button {
+  font-size: 18px;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
