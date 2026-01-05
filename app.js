@@ -45,6 +45,14 @@ function displayEditablePhrases(phrases) {
     const phraseWrapper = document.createElement("div");
     phraseWrapper.className = "phrase";
 
+    const playButton = document.createElement("button");
+    playButton.textContent = "▶️";
+    playButton.title = "Play phrase";
+
+    playButton.addEventListener("click", () => {
+      speakFrench(phrases[index]);
+    });
+
     const textarea = document.createElement("textarea");
     textarea.value = phrase;
     textarea.rows = 2;
@@ -54,7 +62,17 @@ function displayEditablePhrases(phrases) {
       localStorage.setItem("phrases", JSON.stringify(phrases));
     });
 
+    phraseWrapper.appendChild(playButton);
     phraseWrapper.appendChild(textarea);
     phrasesContainer.appendChild(phraseWrapper);
   });
 }
+
+function speakFrench(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "fr-FR";
+  utterance.rate = 0.9; // slightly slower for clarity
+  speechSynthesis.speak(utterance);
+}
+
+
