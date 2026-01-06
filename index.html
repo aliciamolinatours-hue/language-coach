@@ -3,32 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <title>Language Coach</title>
- <link rel="stylesheet" href="styles.css">
-
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-<div class="container">
-<div class="section">
+  <div class="container">
 
-    <h1>Tour Script Trainer</h1>
+    <!-- Header -->
+    <div class="section">
+      <h1>Tour Script Trainer</h1>
       <p class="subtitle">
-       Practice calmly. Speak with confidence.
-       </p>
+        Practice calmly. Speak with confidence.
+      </p>
+    </div>
 
-  <p>Paste your tour script (in French):</p>
+    <!-- Script input -->
+    <div class="section">
+      <label for="scriptInput">Paste your tour script (in French)</label>
+      <textarea id="scriptInput" placeholder="Bonjour à tous..."></textarea>
+      <button id="saveScriptBtn">Save Script</button>
+    </div>
 
-  <textarea id="scriptInput" rows="10" cols="50"></textarea>
+    <!-- Phrases -->
+    <div class="section">
+      <h2>Your Phrases</h2>
+      <div id="phrasesContainer"></div>
+    </div>
 
-  <br /><br />
+  </div>
 
-  <button id="saveScriptBtn">Save Script</button>
-
-  <hr />
-
-<h2>Your Phrases</h2>
-
-<div id="phrasesContainer"></div>
-  
   <script src="app.js"></script>
 </body>
 </html>
