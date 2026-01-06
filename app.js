@@ -6,12 +6,31 @@ let phrases = [];
 let currentProgress = 0;
 const totalPhrasesGoal = 12;
 let breathingAnimation = null;
+let currentFilter = 'all'; // 'all', 'custom', 'frequent'
+let currentSort = 'date'; // 'date', 'alpha', 'spoken'
 
-// Initialize speech synthesis voices
-speechSynthesis.onvoiceschanged = () => {
-  availableVoices = speechSynthesis.getVoices();
-  console.log(`${availableVoices.length} voices available`);
-};
+// Initialize speech synthesis with better voice
+function setupBetterVoice() {
+  // Wait for voices to be loaded
+  speechSynthesis.onvoiceschanged = () => {
+    availableVoices = speechSynthesis.getVoices();
+    console.log(`${availableVoices.length} voices available`);
+    
+    // Try to find a better French voice
+    const preferredVoices = availableVoices.filter(voice => {
+      return voice.lang.includes('fr') && (
+        voice.name.includes('Google') ||
+        voice.name.includes('Microsoft') ||
+        voice.name.includes('Premium') ||
+        voice.name.includes('Natural')
+      );
+    });
+    
+    if (preferredVoices.length > 0) {
+      console.log('Found preferred voice:', preferredVoices[0].name);
+    }
+  };
+}
 
 // DOM elements
 const saveButton = document.getElementById("saveScriptBtn");
@@ -25,13 +44,298 @@ const sortBtn = document.querySelector('.sort-btn');
 const intentionBtn = document.querySelector('.intention-btn');
 const breathCircle = document.querySelector('.breath-circle');
 
+// Modal elements (will be created dynamically)
+let filterModal, sortModal, editModal;
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+  setupBetterVoice();
   initializeApp();
   setupEventListeners();
+  createModals();
   startBreathingAnimation();
   updateProgressBar();
 });
+
+// Create modal dialogs
+function createModals() {
+  // Create filter modal
+  filterModal = document.createElement('div');
+  filterModal.className = 'modal';
+  filterModal.innerHTML = `
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Filter Phrases</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-option" data-filter="all">
+          <i class="fas fa-layer-group"></i>
+          <span>All Phrases</span>
+        </div>
+        <div class="modal-option" data-filter="custom">
+          <i class="fas fa-edit"></i>
+          <span>Custom Phrases Only</span>
+        </div>
+        <div class="modal-option" data-filter="frequent">
+          <i class="fas fa-fire"></i>
+          <span>Frequently Spoken</span>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(filterModal);
+
+  // Create sort modal
+  sortModal = document.createElement('div');
+  sortModal.className = 'modal';
+  sortModal.innerHTML = `
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Sort Phrases</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-option" data-sort="date">
+          <i class="fas fa-calendar"></i>
+          <span>Most Recent First</span>
+        </div>
+        <div class="modal-option" data-sort="alpha">
+          <i class="fas fa-sort-alpha-down"></i>
+          <span>Alphabetical</span>
+        </div>
+        <div class="modal-option" data-sort="spoken">
+          <i class="fas fa-microphone"></i>
+          <span>Most Spoken First</span>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(sortModal);
+
+  // Create edit modal
+  editModal = document.createElement('div');
+  editModal.className = 'modal';
+  editModal.innerHTML = `
+    <div class="modal-overlay"></div>
+    <div class="modal-content edit-modal">
+      <div class="modal-header">
+        <h3>Edit Phrase</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="editPhraseText" placeholder="Edit your phrase..."></textarea>
+        <div class="edit-actions">
+          <button class="btn btn-secondary edit-cancel">Cancel</button>
+          <button class="btn btn-primary edit-save">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(editModal);
+
+  // Add modal styles
+  const style = document.createElement('style');
+  style.textContent = `
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+      position: relative;
+      background: var(--bg-modal);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 90%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 1001;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    
+    .edit-modal .modal-content {
+      max-width: 500px;
+    }
+    
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .modal-header h3 {
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-round);
+      transition: var(--transition);
+    }
+    
+    .modal-close:hover {
+      background: var(--bg-hover);
+    }
+    
+    .modal-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .modal-option:hover {
+      background: var(--bg-hover);
+      border-color: var(--primary);
+      transform: translateX(4px);
+    }
+    
+    .modal-option.selected {
+      background: var(--secondary-soft);
+      border-color: var(--secondary);
+    }
+    
+    .modal-option i {
+      color: var(--primary);
+      font-size: 18px;
+      width: 24px;
+    }
+    
+    .modal-option span {
+      color: var(--text-main);
+      font-weight: 400;
+    }
+    
+    #editPhraseText {
+      width: 100%;
+      min-height: 150px;
+      padding: 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-alt);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 1rem;
+      line-height: 1.6;
+      resize: vertical;
+    }
+    
+    .edit-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .edit-actions .btn {
+      flex: 1;
+    }
+    
+    /* Phrase action buttons */
+    .phrase-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-main);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: var(--transition);
+    }
+    
+    .action-btn:hover {
+      background: var(--primary-light);
+      color: var(--text-main);
+    }
+    
+    .action-btn.split-btn:hover {
+      background: var(--accent-light);
+      color: #065F46;
+    }
+    
+    .action-btn.merge-btn:hover {
+      background: var(--secondary-light);
+      color: #075985;
+    }
+    
+    .action-btn.edit-btn:hover {
+      background: var(--quaternary-light);
+      color: #5B21B6;
+    }
+    
+    .action-btn.delete-btn:hover {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+    
+    .custom-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--accent);
+      color: #065F46;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 // Initialize app data
 function initializeApp() {
@@ -44,13 +348,13 @@ function initializeApp() {
   
   if (savedPhrases && savedPhrases.length > 0) {
     phrases = savedPhrases;
-    displayEnhancedPhrases(phrases);
+    displayEnhancedPhrases(getFilteredAndSortedPhrases());
     updateConfidenceMetrics();
   } else if (savedScript) {
     scriptInput.value = savedScript;
     charCount.textContent = savedScript.length;
     phrases = splitIntoPhrases(savedScript);
-    displayEnhancedPhrases(phrases);
+    displayEnhancedPhrases(getFilteredAndSortedPhrases());
     updateConfidenceMetrics();
   }
   
@@ -90,11 +394,11 @@ function setupEventListeners() {
   
   // Filter and sort buttons
   if (filterBtn) {
-    filterBtn.addEventListener("click", handleFilterPhrases);
+    filterBtn.addEventListener("click", () => showModal('filter'));
   }
   
   if (sortBtn) {
-    sortBtn.addEventListener("click", handleSortPhrases);
+    sortBtn.addEventListener("click", () => showModal('sort'));
   }
   
   // Daily intention button
@@ -118,6 +422,143 @@ function setupEventListeners() {
       showToast(`${text} feature coming soon`, "info");
     });
   });
+  
+  // Modal event listeners
+  setupModalEvents();
+}
+
+function setupModalEvents() {
+  // Close modals when clicking overlay or close button
+  document.querySelectorAll('.modal-overlay, .modal-close').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      hideAllModals();
+    });
+  });
+  
+  // Prevent modal content from closing modal
+  document.querySelectorAll('.modal-content').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+  });
+  
+  // Filter modal options
+  filterModal.querySelectorAll('.modal-option').forEach(option => {
+    option.addEventListener('click', function() {
+      const filter = this.dataset.filter;
+      currentFilter = filter;
+      
+      // Update filter button text
+      const filterText = filter === 'all' ? 'All Phrases' : 
+                        filter === 'custom' ? 'Custom Only' : 
+                        'Frequent';
+      filterBtn.querySelector('i').className = filter === 'all' ? 'fas fa-filter' :
+                                               filter === 'custom' ? 'fas fa-edit' : 
+                                               'fas fa-fire';
+      
+      // Show filter status
+      showToast(`Filter: ${filterText}`, "info");
+      
+      // Update display
+      displayEnhancedPhrases(getFilteredAndSortedPhrases());
+      hideAllModals();
+    });
+  });
+  
+  // Sort modal options
+  sortModal.querySelectorAll('.modal-option').forEach(option => {
+    option.addEventListener('click', function() {
+      const sort = this.dataset.sort;
+      currentSort = sort;
+      
+      // Update sort button icon
+      sortBtn.querySelector('i').className = sort === 'date' ? 'fas fa-calendar' :
+                                            sort === 'alpha' ? 'fas fa-sort-alpha-down' : 
+                                            'fas fa-microphone';
+      
+      // Show sort status
+      const sortText = sort === 'date' ? 'Date' : 
+                      sort === 'alpha' ? 'A-Z' : 
+                      'Spoken';
+      showToast(`Sorted by: ${sortText}`, "info");
+      
+      // Update display
+      displayEnhancedPhrases(getFilteredAndSortedPhrases());
+      hideAllModals();
+    });
+  });
+  
+  // Edit modal buttons
+  editModal.querySelector('.edit-cancel').addEventListener('click', () => {
+    hideAllModals();
+  });
+  
+  editModal.querySelector('.edit-save').addEventListener('click', saveEditedPhrase);
+}
+
+function showModal(type) {
+  hideAllModals();
+  
+  switch(type) {
+    case 'filter':
+      // Update selected filter
+      filterModal.querySelectorAll('.modal-option').forEach(option => {
+        option.classList.remove('selected');
+        if (option.dataset.filter === currentFilter) {
+          option.classList.add('selected');
+        }
+      });
+      filterModal.classList.add('active');
+      break;
+      
+    case 'sort':
+      // Update selected sort
+      sortModal.querySelectorAll('.modal-option').forEach(option => {
+        option.classList.remove('selected');
+        if (option.dataset.sort === currentSort) {
+          option.classList.add('selected');
+        }
+      });
+      sortModal.classList.add('active');
+      break;
+  }
+}
+
+function hideAllModals() {
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.classList.remove('active');
+  });
+}
+
+// Get filtered and sorted phrases
+function getFilteredAndSortedPhrases() {
+  let filtered = [...phrases];
+  
+  // Apply filter
+  switch(currentFilter) {
+    case 'custom':
+      filtered = filtered.filter(p => p.isCustom);
+      break;
+    case 'frequent':
+      filtered = filtered.filter(p => p.spokenCount > 2);
+      break;
+  }
+  
+  // Apply sort
+  switch(currentSort) {
+    case 'date':
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      break;
+    case 'alpha':
+      filtered.sort((a, b) => a.text.localeCompare(b.text));
+      break;
+    case 'spoken':
+      filtered.sort((a, b) => b.spokenCount - a.spokenCount);
+      break;
+  }
+  
+  return filtered;
 }
 
 // --- Core Functions ---
@@ -154,9 +595,10 @@ function handleSaveScript() {
         tag: getPhraseTag(text),
         practiced: false,
         practiceTime: 0,
+        spokenCount: 0,
         confidence: Math.floor(Math.random() * 40), // Random initial confidence
         lastPracticed: null,
-        favorite: false,
+        isCustom: false,
         createdAt: new Date().toISOString()
       };
     });
@@ -166,7 +608,7 @@ function handleSaveScript() {
     localStorage.setItem("phrases", JSON.stringify(phrases));
     
     // Update UI
-    displayEnhancedPhrases(phrases);
+    displayEnhancedPhrases(getFilteredAndSortedPhrases());
     updateProgressBar();
     
     // Show success state
@@ -207,17 +649,34 @@ function speakFrench(text) {
   
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "fr-FR";
-  utterance.rate = 0.9;
-  utterance.pitch = 1;
+  utterance.rate = 0.85; // Slightly slower for coach-like delivery
+  utterance.pitch = 1.1; // Slightly higher pitch
   utterance.volume = 1;
   
-  // Find French voice
-  const frenchVoice = availableVoices.find(
-    v => v.lang === "fr-FR" || v.lang.startsWith("fr")
+  // Find the best French voice
+  let bestVoice = null;
+  
+  // First try to find premium voices
+  bestVoice = availableVoices.find(
+    v => v.lang.includes('fr') && (
+      v.name.includes('Google') ||
+      v.name.includes('Microsoft') ||
+      v.name.includes('Premium') ||
+      v.name.includes('Natural') ||
+      v.name.includes('Enhanced')
+    )
   );
   
-  if (frenchVoice) {
-    utterance.voice = frenchVoice;
+  // If no premium voice, take any French voice
+  if (!bestVoice) {
+    bestVoice = availableVoices.find(
+      v => v.lang === "fr-FR" || v.lang.startsWith("fr")
+    );
+  }
+  
+  if (bestVoice) {
+    utterance.voice = bestVoice;
+    console.log('Using voice:', bestVoice.name);
   }
   
   // Event listeners for the utterance
@@ -245,12 +704,24 @@ function displayEnhancedPhrases(phrasesArray) {
   phrasesContainer.innerHTML = "";
   
   if (phrasesArray.length === 0) {
+    let message = "";
+    switch(currentFilter) {
+      case 'custom':
+        message = "No custom phrases. Edit a phrase to mark it as custom.";
+        break;
+      case 'frequent':
+        message = "No frequently spoken phrases yet. Practice some phrases!";
+        break;
+      default:
+        message = "No phrases yet. Paste and save a script to begin.";
+    }
+    
     phrasesContainer.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">
           <i class="fas fa-feather"></i>
         </div>
-        <div class="empty-text">No phrases yet. Paste and save a script to begin.</div>
+        <div class="empty-text">${message}</div>
       </div>
     `;
     return;
@@ -282,11 +753,13 @@ function createPhraseCard(phraseObj, index) {
     `${phraseObj.practiceTime} min` : "Not practiced";
   
   phraseCard.innerHTML = `
+    ${phraseObj.isCustom ? '<div class="custom-badge">Custom</div>' : ''}
     <div class="phrase-content">
       <div class="phrase-text">${phraseObj.text}</div>
       <div class="phrase-meta">
         <span class="meta-item"><i class="far fa-clock"></i> ${practiceTimeText}</span>
         <span class="meta-item"><i class="fas fa-wave-square" style="color: ${confidenceColor}"></i> ${phraseObj.confidence}%</span>
+        <span class="meta-item"><i class="fas fa-microphone"></i> ${phraseObj.spokenCount}</span>
         <span class="phrase-tag">${phraseObj.tag}</span>
       </div>
     </div>
@@ -294,6 +767,20 @@ function createPhraseCard(phraseObj, index) {
       <button class="phrase-btn play-btn" title="Play phrase">
         <i class="fas fa-play"></i>
       </button>
+      <div class="action-buttons">
+        <button class="action-btn edit-btn" title="Edit phrase">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="action-btn split-btn" title="Split phrase">
+          <i class="fas fa-cut"></i>
+        </button>
+        <button class="action-btn merge-btn" title="Merge with next phrase">
+          <i class="fas fa-arrow-down"></i>
+        </button>
+        <button class="action-btn delete-btn" title="Delete phrase">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
       <button class="phrase-btn check-btn" title="${phraseObj.practiced ? 'Mark as not practiced' : 'Mark as practiced'}">
         <i class="${phraseObj.practiced ? 'fas' : 'far'} fa-check-circle"></i>
       </button>
@@ -303,6 +790,10 @@ function createPhraseCard(phraseObj, index) {
   // Add event listeners
   const playBtn = phraseCard.querySelector('.play-btn');
   const checkBtn = phraseCard.querySelector('.check-btn');
+  const editBtn = phraseCard.querySelector('.edit-btn');
+  const splitBtn = phraseCard.querySelector('.split-btn');
+  const mergeBtn = phraseCard.querySelector('.merge-btn');
+  const deleteBtn = phraseCard.querySelector('.delete-btn');
   
   playBtn.addEventListener('click', () => {
     handlePlayPhrase(phraseObj, playBtn);
@@ -310,6 +801,22 @@ function createPhraseCard(phraseObj, index) {
   
   checkBtn.addEventListener('click', () => {
     handlePracticePhrase(phraseObj, checkBtn, index);
+  });
+  
+  editBtn.addEventListener('click', () => {
+    handleEditPhrase(phraseObj);
+  });
+  
+  splitBtn.addEventListener('click', () => {
+    handleSplitPhrase(phraseObj);
+  });
+  
+  mergeBtn.addEventListener('click', () => {
+    handleMergePhrase(phraseObj, index);
+  });
+  
+  deleteBtn.addEventListener('click', () => {
+    handleDeletePhrase(phraseObj);
   });
   
   // Add hover effect for the whole card
@@ -322,6 +829,122 @@ function createPhraseCard(phraseObj, index) {
   });
   
   return phraseCard;
+}
+
+// --- New Editing Functions ---
+
+let currentEditingPhrase = null;
+
+function handleEditPhrase(phraseObj) {
+  currentEditingPhrase = phraseObj;
+  const editTextarea = editModal.querySelector('#editPhraseText');
+  editTextarea.value = phraseObj.text;
+  editModal.classList.add('active');
+}
+
+function saveEditedPhrase() {
+  if (!currentEditingPhrase) return;
+  
+  const editTextarea = editModal.querySelector('#editPhraseText');
+  const newText = editTextarea.value.trim();
+  
+  if (!newText) {
+    showToast("Phrase cannot be empty", "error");
+    return;
+  }
+  
+  // Update phrase
+  currentEditingPhrase.text = newText;
+  currentEditingPhrase.isCustom = true;
+  currentEditingPhrase.tag = getPhraseTag(newText);
+  
+  // Save and update
+  localStorage.setItem("phrases", JSON.stringify(phrases));
+  displayEnhancedPhrases(getFilteredAndSortedPhrases());
+  
+  hideAllModals();
+  showToast("Phrase updated successfully", "success");
+  currentEditingPhrase = null;
+}
+
+function handleSplitPhrase(phraseObj) {
+  // Simple split by punctuation
+  const sentences = phraseObj.text.split(/[.!?]+/).filter(s => s.trim());
+  
+  if (sentences.length <= 1) {
+    showToast("This phrase cannot be split further", "info");
+    return;
+  }
+  
+  if (confirm(`Split this phrase into ${sentences.length} parts?`)) {
+    const newPhrases = sentences.map((sentence, index) => ({
+      id: Date.now() + index,
+      text: sentence.trim() + (phraseObj.text.match(/[.!?]/g)?.[index] || '.'),
+      tag: getPhraseTag(sentence),
+      practiced: false,
+      practiceTime: 0,
+      spokenCount: 0,
+      confidence: phraseObj.confidence / sentences.length,
+      lastPracticed: null,
+      isCustom: true,
+      createdAt: new Date().toISOString()
+    }));
+    
+    // Remove original and add new phrases
+    phrases = phrases.filter(p => p.id !== phraseObj.id);
+    phrases.push(...newPhrases);
+    
+    // Save and update
+    localStorage.setItem("phrases", JSON.stringify(phrases));
+    displayEnhancedPhrases(getFilteredAndSortedPhrases());
+    
+    showToast(`Split into ${newPhrases.length} phrases`, "success");
+  }
+}
+
+function handleMergePhrase(phraseObj, index) {
+  if (index >= phrases.length - 1) {
+    showToast("No next phrase to merge with", "info");
+    return;
+  }
+  
+  const nextPhrase = phrases[index + 1];
+  
+  if (confirm("Merge these two phrases?")) {
+    const mergedText = phraseObj.text.trim() + ' ' + nextPhrase.text.trim();
+    
+    const mergedPhrase = {
+      id: phraseObj.id,
+      text: mergedText,
+      tag: getPhraseTag(mergedText),
+      practiced: phraseObj.practiced || nextPhrase.practiced,
+      practiceTime: phraseObj.practiceTime + nextPhrase.practiceTime,
+      spokenCount: phraseObj.spokenCount + nextPhrase.spokenCount,
+      confidence: Math.max(phraseObj.confidence, nextPhrase.confidence),
+      lastPracticed: phraseObj.lastPracticed || nextPhrase.lastPracticed,
+      isCustom: true,
+      createdAt: phraseObj.createdAt
+    };
+    
+    // Remove both original phrases and add merged one
+    phrases = phrases.filter((p, i) => i !== index && i !== index + 1);
+    phrases.splice(index, 0, mergedPhrase);
+    
+    // Save and update
+    localStorage.setItem("phrases", JSON.stringify(phrases));
+    displayEnhancedPhrases(getFilteredAndSortedPhrases());
+    
+    showToast("Phrases merged successfully", "success");
+  }
+}
+
+function handleDeletePhrase(phraseObj) {
+  if (confirm("Are you sure you want to delete this phrase?")) {
+    phrases = phrases.filter(p => p.id !== phraseObj.id);
+    localStorage.setItem("phrases", JSON.stringify(phrases));
+    displayEnhancedPhrases(getFilteredAndSortedPhrases());
+    showToast("Phrase deleted", "success");
+  }
 }
 
 // --- Interaction Handlers ---
@@ -349,11 +972,12 @@ function handlePlayPhrase(phraseObj, button) {
       
       // Update phrase stats
       phraseObj.practiceTime += Math.round(practiceSeconds / 60);
+      phraseObj.spokenCount += 1;
       phraseObj.lastPracticed = new Date().toISOString();
       
       // Increase confidence
       if (phraseObj.confidence < 100) {
-        phraseObj.confidence = Math.min(phraseObj.confidence + 10, 100);
+        phraseObj.confidence = Math.min(phraseObj.confidence + 5, 100);
       }
       
       // Save and update
@@ -491,49 +1115,6 @@ function handleImportScript() {
   document.body.removeChild(fileInput);
 }
 
-function handleFilterPhrases() {
-  filterBtn.classList.toggle('active');
-  
-  if (filterBtn.classList.contains('active')) {
-    // Filter to show only unpracticed phrases
-    const unpracticed = phrases.filter(p => !p.practiced);
-    displayEnhancedPhrases(unpracticed);
-    showToast(`Showing ${unpracticed.length} unpracticed phrases`, "info");
-    filterBtn.style.background = 'var(--primary)';
-    filterBtn.style.color = 'white';
-  } else {
-    // Show all phrases
-    displayEnhancedPhrases(phrases);
-    showToast("Showing all phrases", "info");
-    filterBtn.style.background = '';
-    filterBtn.style.color = '';
-  }
-}
-
-function handleSortPhrases() {
-  sortBtn.classList.toggle('active');
-  
-  let sortedPhrases = [...phrases];
-  
-  if (sortBtn.classList.contains('active')) {
-    // Sort by confidence (lowest first)
-    sortedPhrases.sort((a, b) => a.confidence - b.confidence);
-    sortBtn.innerHTML = '<i class="fas fa-sort-amount-up"></i>';
-    showToast("Sorted by confidence (low to high)", "info");
-  } else {
-    // Sort by creation date (newest first)
-    sortedPhrases.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    sortBtn.innerHTML = '<i class="fas fa-sort-amount-down"></i>';
-    showToast("Sorted by recent", "info");
-  }
-  
-  displayEnhancedPhrases(sortedPhrases);
-  sortBtn.style.transform = 'rotate(180deg)';
-  setTimeout(() => {
-    sortBtn.style.transform = '';
-  }, 300);
-}
-
 // --- Utility Functions ---
 
 function updatePhraseCard(phraseId) {
@@ -560,6 +1141,10 @@ function updatePhraseCard(phraseId) {
   const practiceTime = phraseObj.practiceTime > 0 ? `${phraseObj.practiceTime} min` : "Not practiced";
   if (practiceTimeElement) practiceTimeElement.innerHTML = `<i class="far fa-clock"></i> ${practiceTime}`;
   
+  // Update spoken count
+  const spokenCountElement = phraseCard.querySelector('.meta-item:nth-child(3)');
+  if (spokenCountElement) spokenCountElement.innerHTML = `<i class="fas fa-microphone"></i> ${phraseObj.spokenCount}`;
+  
   // Update check button
   const checkBtn = phraseCard.querySelector('.check-btn');
   const checkIcon = checkBtn.querySelector('i');
@@ -572,6 +1157,19 @@ function updatePhraseCard(phraseId) {
   } else {
     checkBtn.style.background = '';
     checkBtn.style.color = '';
+  }
+  
+  // Update custom badge
+  const customBadge = phraseCard.querySelector('.custom-badge');
+  if (phraseObj.isCustom) {
+    if (!customBadge) {
+      const badge = document.createElement('div');
+      badge.className = 'custom-badge';
+      badge.textContent = 'Custom';
+      phraseCard.insertBefore(badge, phraseCard.firstChild);
+    }
+  } else if (customBadge) {
+    customBadge.remove();
   }
 }
 
