@@ -2,34 +2,215 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Language Coach</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confidence Coach | Language Practice System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
   <div class="container">
-
     <!-- Header -->
-    <div class="section">
-      <h1>Tour Script Trainer</h1>
-      <p class="subtitle">
-        Practice calmly. Speak with confidence.
-      </p>
+    <div class="header">
+      <div class="logo-container">
+        <div class="logo">
+          <i class="fas fa-bullhorn"></i>
+        </div>
+        <div class="header-text">
+          <h1>Confidence Coach</h1>
+          <p class="subtitle">Practice calmly. Speak with confidence.</p>
+        </div>
+      </div>
+      
+      <div class="user-profile">
+        <div class="user-avatar">JD</div>
+        <div>
+          <div class="user-name">Jean Dupont</div>
+          <div class="user-role">Professional Guide</div>
+        </div>
+        <i class="fas fa-chevron-down"></i>
+      </div>
     </div>
 
-    <!-- Script input -->
-    <div class="section">
-      <label for="scriptInput">Paste your tour script (in French)</label>
-      <textarea id="scriptInput" placeholder="Bonjour à tous..."></textarea>
-      <button id="saveScriptBtn">Save Script</button>
+    <!-- Progress Section -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <div class="progress-label">Today's Progress</div>
+        <div class="progress-percent">65%</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+      <div class="progress-detail">
+        <i class="fas fa-check-circle progress-icon"></i>
+        7 of 12 phrases practiced today
+      </div>
     </div>
 
-    <!-- Phrases -->
+    <!-- Script Input Section -->
     <div class="section">
-      <h2>Your Phrases</h2>
-      <div id="phrasesContainer"></div>
+      <div class="section-header">
+        <div class="section-title">
+          <div class="section-icon">
+            <i class="fas fa-edit"></i>
+          </div>
+          Tour Script Input
+        </div>
+        <div class="section-actions">
+          <button class="btn btn-secondary">
+            <i class="fas fa-history btn-icon"></i>
+            Load Previous
+          </button>
+        </div>
+      </div>
+      
+      <div class="input-container">
+        <label for="scriptInput">Paste your tour script (in French)</label>
+        <textarea id="scriptInput" placeholder="Bonjour à tous, je m'appelle Jean et je serai votre guide pour cette visite..."></textarea>
+        <div class="input-info">
+          <div class="input-hint">
+            <i class="fas fa-info-circle"></i>
+            Script will be automatically divided into practice phrases
+          </div>
+          <div class="char-count">Characters: <span id="charCount">0</span></div>
+        </div>
+      </div>
+      
+      <div class="button-group">
+        <button id="saveScriptBtn" class="btn btn-primary">
+          <i class="fas fa-save btn-icon"></i>
+          Save & Process Script
+        </button>
+        <button class="btn btn-secondary">
+          <i class="fas fa-play-circle btn-icon"></i>
+          Start Practice Session
+        </button>
+      </div>
     </div>
 
+    <!-- Phrases Section -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <div class="section-icon">
+            <i class="fas fa-quote-right"></i>
+          </div>
+          Your Practice Phrases
+        </div>
+        <div class="section-actions">
+          <button class="btn btn-secondary">
+            <i class="fas fa-filter btn-icon"></i>
+            Filter
+          </button>
+          <button class="btn btn-secondary">
+            <i class="fas fa-sort-amount-down btn-icon"></i>
+            Sort
+          </button>
+        </div>
+      </div>
+      
+      <div id="phrasesContainer" class="phrases-container">
+        <!-- Phrases will be dynamically inserted here -->
+        <div class="phrase-card">
+          <div class="phrase-content">
+            <div class="phrase-text">Bonjour à tous, je m'appelle Jean et je serai votre guide pour cette visite.</div>
+            <div class="phrase-meta">
+              <span><i class="far fa-clock"></i> Practice time: 2 min</span>
+              <span><i class="fas fa-chart-line"></i> Confidence: 85%</span>
+              <span class="phrase-tag">Greeting</span>
+            </div>
+          </div>
+          <div class="phrase-actions">
+            <button class="phrase-btn">
+              <i class="fas fa-play"></i>
+            </button>
+            <button class="phrase-btn">
+              <i class="fas fa-microphone"></i>
+            </button>
+            <button class="phrase-btn">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="phrase-card">
+          <div class="phrase-content">
+            <div class="phrase-text">Nous allons commencer par la salle principale où vous pourrez admirer les œuvres de Monet.</div>
+            <div class="phrase-meta">
+              <span><i class="far fa-clock"></i> Practice time: 3 min</span>
+              <span><i class="fas fa-chart-line"></i> Confidence: 72%</span>
+              <span class="phrase-tag">Introduction</span>
+            </div>
+          </div>
+          <div class="phrase-actions">
+            <button class="phrase-btn">
+              <i class="fas fa-play"></i>
+            </button>
+            <button class="phrase-btn">
+              <i class="fas fa-microphone"></i>
+            </button>
+            <button class="phrase-btn">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="phrase-card">
+          <div class="phrase-content">
+            <div class="phrase-text">Cette peinture, réalisée en 1899, représente un paysage de la campagne française.</div>
+            <div class="phrase-meta">
+              <span><i class="far fa-clock"></i> Practice time: 4 min</span>
+              <span><i class="fas fa-chart-line"></i> Confidence: 65%</span>
+              <span class="phrase-tag">Description</span>
+            </div>
+          </div>
+          <div class="phrase-actions">
+            <button class="phrase-btn">
+              <i class="fas fa-play"></i>
+            </button>
+            <button class="phrase-btn">
+              <i class="fas fa-microphone"></i>
+            </button>
+            <button class="phrase-btn">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="phrase-card">
+          <div class="phrase-content">
+            <div class="phrase-text">N'hésitez pas à me poser des questions à tout moment pendant la visite.</div>
+            <div class="phrase-meta">
+              <span><i class="far fa-clock"></i> Practice time: 1 min</span>
+              <span><i class="fas fa-chart-line"></i> Confidence: 92%</span>
+              <span class="phrase-tag">Interaction</span>
+            </div>
+          </div>
+          <div class="phrase-actions">
+            <button class="phrase-btn">
+              <i class="fas fa-play"></i>
+            </button>
+            <button class="phrase-btn">
+              <i class="fas fa-microphone"></i>
+            </button>
+            <button class="phrase-btn">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-info">
+        Confidence Coach v2.0 • Professional Language Practice System
+      </div>
+      <div class="footer-links">
+        <a href="#" class="footer-link">Help</a>
+        <a href="#" class="footer-link">Privacy</a>
+        <a href="#" class="footer-link">Feedback</a>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>
