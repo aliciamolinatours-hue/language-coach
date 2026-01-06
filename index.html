@@ -3,46 +3,70 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Confidence Coach | Language Practice System</title>
+  <title>Confidence Coach | Calm Speech Practice</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="background-wrapper">
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+    <div class="floating-shape shape-3"></div>
+  </div>
+
   <div class="container">
     <!-- Header -->
     <div class="header">
       <div class="logo-container">
         <div class="logo">
-          <i class="fas fa-bullhorn"></i>
+          <i class="fas fa-dove"></i>
         </div>
         <div class="header-text">
           <h1>Confidence Coach</h1>
-          <p class="subtitle">Practice calmly. Speak with confidence.</p>
+          <p class="subtitle">Speak with calm assurance</p>
         </div>
       </div>
       
       <div class="user-profile">
-        <div class="user-avatar">JD</div>
-        <div>
-          <div class="user-name">Jean Dupont</div>
-          <div class="user-role">Professional Guide</div>
+        <div class="user-avatar">
+          <i class="fas fa-user"></i>
         </div>
-        <i class="fas fa-chevron-down"></i>
+        <div class="user-info">
+          <div class="user-name">Jean</div>
+          <div class="user-role">Guide</div>
+        </div>
       </div>
+    </div>
+
+    <!-- Daily Intention -->
+    <div class="intention-section">
+      <div class="intention-icon">
+        <i class="fas fa-seedling"></i>
+      </div>
+      <div class="intention-content">
+        <h3>Today's Intention</h3>
+        <p>Speak with clarity and gentle confidence</p>
+      </div>
+      <button class="intention-btn">
+        <i class="fas fa-feather-alt"></i>
+      </button>
     </div>
 
     <!-- Progress Section -->
     <div class="progress-section">
       <div class="progress-header">
-        <div class="progress-label">Today's Progress</div>
+        <div class="progress-label">Your Calm Progress</div>
         <div class="progress-percent">65%</div>
       </div>
       <div class="progress-bar">
         <div class="progress-fill"></div>
       </div>
       <div class="progress-detail">
-        <i class="fas fa-check-circle progress-icon"></i>
-        7 of 12 phrases practiced today
+        <i class="fas fa-spa progress-icon"></i>
+        <span>7 of 12 phrases practiced today</span>
       </div>
     </div>
 
@@ -51,25 +75,28 @@
       <div class="section-header">
         <div class="section-title">
           <div class="section-icon">
-            <i class="fas fa-edit"></i>
+            <i class="fas fa-feather"></i>
           </div>
-          Tour Script Input
+          <h2>Your Script</h2>
         </div>
         <div class="section-actions">
-          <button class="btn btn-secondary">
-            <i class="fas fa-history btn-icon"></i>
-            Load Previous
+          <button class="btn btn-outline">
+            <i class="fas fa-cloud-upload-alt"></i>
+            Import
           </button>
         </div>
       </div>
       
       <div class="input-container">
-        <label for="scriptInput">Paste your tour script (in French)</label>
+        <div class="input-label">
+          <i class="fas fa-quote-left"></i>
+          <span>Paste your tour script (in French)</span>
+        </div>
         <textarea id="scriptInput" placeholder="Bonjour à tous, je m'appelle Jean et je serai votre guide pour cette visite..."></textarea>
         <div class="input-info">
           <div class="input-hint">
-            <i class="fas fa-info-circle"></i>
-            Script will be automatically divided into practice phrases
+            <i class="fas fa-magic"></i>
+            <span>Script will be gently divided into practice phrases</span>
           </div>
           <div class="char-count">Characters: <span id="charCount">0</span></div>
         </div>
@@ -77,12 +104,12 @@
       
       <div class="button-group">
         <button id="saveScriptBtn" class="btn btn-primary">
-          <i class="fas fa-save btn-icon"></i>
-          Save & Process Script
+          <i class="fas fa-cloud btn-icon"></i>
+          Save & Process
         </button>
-        <button class="btn btn-secondary">
+        <button class="btn btn-secondary start-practice-btn">
           <i class="fas fa-play-circle btn-icon"></i>
-          Start Practice Session
+          Begin Practice
         </button>
       </div>
     </div>
@@ -92,18 +119,16 @@
       <div class="section-header">
         <div class="section-title">
           <div class="section-icon">
-            <i class="fas fa-quote-right"></i>
+            <i class="fas fa-heart"></i>
           </div>
-          Your Practice Phrases
+          <h2>Practice Phrases</h2>
         </div>
         <div class="section-actions">
-          <button class="btn btn-secondary">
-            <i class="fas fa-filter btn-icon"></i>
-            Filter
+          <button class="btn-icon-round filter-btn">
+            <i class="fas fa-filter"></i>
           </button>
-          <button class="btn btn-secondary">
-            <i class="fas fa-sort-amount-down btn-icon"></i>
-            Sort
+          <button class="btn-icon-round sort-btn">
+            <i class="fas fa-sort-amount-down"></i>
           </button>
         </div>
       </div>
@@ -114,20 +139,17 @@
           <div class="phrase-content">
             <div class="phrase-text">Bonjour à tous, je m'appelle Jean et je serai votre guide pour cette visite.</div>
             <div class="phrase-meta">
-              <span><i class="far fa-clock"></i> Practice time: 2 min</span>
-              <span><i class="fas fa-chart-line"></i> Confidence: 85%</span>
+              <span class="meta-item"><i class="far fa-clock"></i> 2 min</span>
+              <span class="meta-item"><i class="fas fa-wave-square"></i> 85%</span>
               <span class="phrase-tag">Greeting</span>
             </div>
           </div>
           <div class="phrase-actions">
-            <button class="phrase-btn">
+            <button class="phrase-btn play-btn">
               <i class="fas fa-play"></i>
             </button>
-            <button class="phrase-btn">
-              <i class="fas fa-microphone"></i>
-            </button>
-            <button class="phrase-btn">
-              <i class="fas fa-ellipsis-h"></i>
+            <button class="phrase-btn check-btn">
+              <i class="far fa-check-circle"></i>
             </button>
           </div>
         </div>
@@ -136,20 +158,17 @@
           <div class="phrase-content">
             <div class="phrase-text">Nous allons commencer par la salle principale où vous pourrez admirer les œuvres de Monet.</div>
             <div class="phrase-meta">
-              <span><i class="far fa-clock"></i> Practice time: 3 min</span>
-              <span><i class="fas fa-chart-line"></i> Confidence: 72%</span>
+              <span class="meta-item"><i class="far fa-clock"></i> 3 min</span>
+              <span class="meta-item"><i class="fas fa-wave-square"></i> 72%</span>
               <span class="phrase-tag">Introduction</span>
             </div>
           </div>
           <div class="phrase-actions">
-            <button class="phrase-btn">
+            <button class="phrase-btn play-btn">
               <i class="fas fa-play"></i>
             </button>
-            <button class="phrase-btn">
-              <i class="fas fa-microphone"></i>
-            </button>
-            <button class="phrase-btn">
-              <i class="fas fa-ellipsis-h"></i>
+            <button class="phrase-btn check-btn">
+              <i class="far fa-check-circle"></i>
             </button>
           </div>
         </div>
@@ -158,20 +177,17 @@
           <div class="phrase-content">
             <div class="phrase-text">Cette peinture, réalisée en 1899, représente un paysage de la campagne française.</div>
             <div class="phrase-meta">
-              <span><i class="far fa-clock"></i> Practice time: 4 min</span>
-              <span><i class="fas fa-chart-line"></i> Confidence: 65%</span>
+              <span class="meta-item"><i class="far fa-clock"></i> 4 min</span>
+              <span class="meta-item"><i class="fas fa-wave-square"></i> 65%</span>
               <span class="phrase-tag">Description</span>
             </div>
           </div>
           <div class="phrase-actions">
-            <button class="phrase-btn">
+            <button class="phrase-btn play-btn">
               <i class="fas fa-play"></i>
             </button>
-            <button class="phrase-btn">
-              <i class="fas fa-microphone"></i>
-            </button>
-            <button class="phrase-btn">
-              <i class="fas fa-ellipsis-h"></i>
+            <button class="phrase-btn check-btn">
+              <i class="far fa-check-circle"></i>
             </button>
           </div>
         </div>
@@ -180,35 +196,53 @@
           <div class="phrase-content">
             <div class="phrase-text">N'hésitez pas à me poser des questions à tout moment pendant la visite.</div>
             <div class="phrase-meta">
-              <span><i class="far fa-clock"></i> Practice time: 1 min</span>
-              <span><i class="fas fa-chart-line"></i> Confidence: 92%</span>
+              <span class="meta-item"><i class="far fa-clock"></i> 1 min</span>
+              <span class="meta-item"><i class="fas fa-wave-square"></i> 92%</span>
               <span class="phrase-tag">Interaction</span>
             </div>
           </div>
           <div class="phrase-actions">
-            <button class="phrase-btn">
+            <button class="phrase-btn play-btn">
               <i class="fas fa-play"></i>
             </button>
-            <button class="phrase-btn">
-              <i class="fas fa-microphone"></i>
-            </button>
-            <button class="phrase-btn">
-              <i class="fas fa-ellipsis-h"></i>
+            <button class="phrase-btn check-btn">
+              <i class="far fa-check-circle"></i>
             </button>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Breathing Guide -->
+    <div class="breathing-section">
+      <div class="breathing-content">
+        <h3><i class="fas fa-wind"></i> Calm Breathing</h3>
+        <p>Breathe in as you prepare to speak</p>
+      </div>
+      <div class="breathing-animation">
+        <div class="breath-circle"></div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <div class="footer">
-      <div class="footer-info">
-        Confidence Coach v2.0 • Professional Language Practice System
-      </div>
       <div class="footer-links">
-        <a href="#" class="footer-link">Help</a>
-        <a href="#" class="footer-link">Privacy</a>
-        <a href="#" class="footer-link">Feedback</a>
+        <a href="#" class="footer-link">
+          <i class="fas fa-moon"></i>
+          <span>Calm Mode</span>
+        </a>
+        <a href="#" class="footer-link">
+          <i class="fas fa-chart-line"></i>
+          <span>Progress</span>
+        </a>
+        <a href="#" class="footer-link">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </a>
+      </div>
+      <div class="footer-info">
+        <i class="fas fa-peace"></i>
+        <span>Confidence Coach • Speak with Peace</span>
       </div>
     </div>
   </div>
