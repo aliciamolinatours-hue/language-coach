@@ -605,7 +605,7 @@ textarea:focus {
   padding: 16px 28px;
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
-  font-weight: 400;
+  font-weight: 500; /* Make text slightly bolder */
   border-radius: var(--radius);
   border: none;
   cursor: pointer;
@@ -620,28 +620,33 @@ textarea:focus {
 
 .btn-primary {
   background: var(--accent);
-  color: var(--text-main);
+  color: #0F766E; /* Dark teal for better contrast against mint */
   border: 1px solid var(--accent-dark);
   box-shadow: var(--shadow-soft);
+  font-weight: 600; /* Make primary button text bolder */
 }
 
 .btn-primary:hover {
- transform: translateY(-2px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-light);
   background: var(--accent-dark);
   border-color: var(--accent-dark);
+  color: #0D5D56; /* Even darker teal on hover */
 }
 
 .btn-secondary {
   background: var(--secondary);
-  color: var(--text-main);
+  color: #0369A1; /* Dark blue for better contrast against sky blue */
   border: 1px solid var(--secondary-dark);
+  font-weight: 500;
 }
 
 .btn-secondary:hover {
   background: var(--secondary-dark);
   border-color: var(--secondary-dark);
   transform: translateY(-2px);
+  color: #075985; /* Darker blue on hover */
+
 }
 
 .btn-outline {
