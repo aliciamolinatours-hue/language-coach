@@ -1,10 +1,11 @@
-// Confidence Coach App with Professional UX
+// Confidence Coach Language Learning App
 
 // Global variables
 let availableVoices = [];
 let phrases = [];
 let currentProgress = 0;
 const totalPhrasesGoal = 12;
+let breathingAnimation = null;
 
 // Initialize speech synthesis voices
 speechSynthesis.onvoiceschanged = () => {
@@ -17,15 +18,18 @@ const saveButton = document.getElementById("saveScriptBtn");
 const scriptInput = document.getElementById("scriptInput");
 const phrasesContainer = document.getElementById("phrasesContainer");
 const charCount = document.getElementById("charCount");
-const startPracticeBtn = document.querySelector('.btn-secondary:nth-of-type(2)');
-const loadPreviousBtn = document.querySelector('.btn-secondary:nth-of-type(1)');
-const filterBtn = document.querySelector('.section-actions .btn-secondary:nth-of-type(1)');
-const sortBtn = document.querySelector('.section-actions .btn-secondary:nth-of-type(2)');
+const startPracticeBtn = document.querySelector('.start-practice-btn');
+const importBtn = document.querySelector('.btn-outline');
+const filterBtn = document.querySelector('.filter-btn');
+const sortBtn = document.querySelector('.sort-btn');
+const intentionBtn = document.querySelector('.intention-btn');
+const breathCircle = document.querySelector('.breath-circle');
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
   initializeApp();
   setupEventListeners();
+  startBreathingAnimation();
   updateProgressBar();
 });
 
@@ -59,6 +63,9 @@ function initializeApp() {
   // Calculate practiced phrases
   const practicedPhrases = phrases.filter(p => p.practiced).length;
   currentProgress = Math.max(currentProgress, practicedPhrases);
+  
+  // Update daily intention
+  updateDailyIntention();
 }
 
 // Setup all event listeners
@@ -76,9 +83,9 @@ function setupEventListeners() {
     startPracticeBtn.addEventListener("click", handleStartPractice);
   }
   
-  // Load previous script
-  if (loadPreviousBtn) {
-    loadPreviousBtn.addEventListener("click", handleLoadPrevious);
+  // Import button
+  if (importBtn) {
+    importBtn.addEventListener("click", handleImportScript);
   }
   
   // Filter and sort buttons
@@ -90,30 +97,49 @@ function setupEventListeners() {
     sortBtn.addEventListener("click", handleSortPhrases);
   }
   
-  // User profile dropdown
+  // Daily intention button
+  if (intentionBtn) {
+    intentionBtn.addEventListener('click', updateDailyIntention);
+  }
+  
+  // User profile
   const userProfile = document.querySelector('.user-profile');
   if (userProfile) {
     userProfile.addEventListener('click', function() {
-      this.classList.toggle('active');
-      // In a real app, you would show a dropdown menu here
+      showToast("Profile settings coming soon", "info");
     });
   }
+  
+  // Footer links
+  document.querySelectorAll('.footer-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const text = this.querySelector('span').textContent;
+      showToast(`${text} feature coming soon`, "info");
+    });
+  });
 }
 
-// --- Core Functions (Your original functionality) ---
+// --- Core Functions ---
 
 function handleSaveScript() {
   const scriptText = scriptInput.value;
   
   if (scriptText.trim() === "") {
-    showToast("Please paste a script first.", "warning");
+    showToast("Please paste a script first", "info");
     return;
   }
   
+  // Save previous script for history
+  saveToHistory(scriptText);
+  
   // Show loading state
   const originalText = saveButton.innerHTML;
-  saveButton.innerHTML = '<i class="fas fa-spinner fa-spin btn-icon"></i> Processing...';
+  saveButton.innerHTML = '<div class="loading-spinner"></div>';
   saveButton.disabled = true;
+  
+  // Animate save button
+  saveButton.style.transform = 'scale(0.95)';
   
   // Simulate processing delay
   setTimeout(() => {
@@ -127,10 +153,11 @@ function handleSaveScript() {
         text: text,
         tag: getPhraseTag(text),
         practiced: false,
-        practiceTime: 0, // in minutes
-        confidence: 0,
+        practiceTime: 0,
+        confidence: Math.floor(Math.random() * 40), // Random initial confidence
         lastPracticed: null,
-        audioURL: null
+        favorite: false,
+        createdAt: new Date().toISOString()
       };
     });
     
@@ -143,29 +170,40 @@ function handleSaveScript() {
     updateProgressBar();
     
     // Show success state
-    saveButton.innerHTML = '<i class="fas fa-check btn-icon"></i> Script Saved!';
-    saveButton.style.background = 'var(--accent)';
+    saveButton.innerHTML = '<i class="fas fa-check"></i> Saved';
+    saveButton.style.background = 'linear-gradient(135deg, var(--accent), var(--accent-dark))';
+    
+    // Animate success
+    saveButton.style.transform = 'scale(1.05)';
     
     // Reset after 2 seconds
     setTimeout(() => {
       saveButton.innerHTML = originalText;
       saveButton.disabled = false;
       saveButton.style.background = '';
-      showToast(`Successfully created ${phrases.length} practice phrases`, "success");
+      saveButton.style.transform = '';
+      showToast(`Created ${phrases.length} practice phrases`, "success");
+      
+      // Animate phrase cards entry
+      animatePhraseCards();
     }, 2000);
     
-  }, 1000);
+  }, 1500);
 }
 
 function splitIntoPhrases(text) {
-  return text
-    .split(/\n|\.(?=\s|$)/)
+  // Split by sentences, keeping questions and exclamations
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  return sentences
     .map(p => p.trim())
     .filter(p => p !== "" && p.length > 3);
 }
 
 function speakFrench(text) {
   if (!text || speechSynthesis.speaking) return;
+  
+  // Pause breathing animation
+  pauseBreathingAnimation();
   
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "fr-FR";
@@ -180,23 +218,22 @@ function speakFrench(text) {
   
   if (frenchVoice) {
     utterance.voice = frenchVoice;
-    console.log(`Using voice: ${frenchVoice.name}`);
-  } else {
-    console.log("French voice not found, using default");
   }
   
   // Event listeners for the utterance
   utterance.onstart = () => {
-    console.log("Speech started");
+    showToast("Speaking phrase...", "info");
   };
   
   utterance.onend = () => {
-    console.log("Speech ended");
+    // Resume breathing animation
+    resumeBreathingAnimation();
+    showToast("Phrase completed", "success");
   };
   
   utterance.onerror = (event) => {
-    console.error("Speech synthesis error:", event);
-    showToast("Error playing audio", "error");
+    resumeBreathingAnimation();
+    showToast("Speech synthesis error", "error");
   };
   
   speechSynthesis.speak(utterance);
@@ -211,9 +248,9 @@ function displayEnhancedPhrases(phrasesArray) {
     phrasesContainer.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">
-          <i class="fas fa-comment-dots"></i>
+          <i class="fas fa-feather"></i>
         </div>
-        <div class="empty-text">No phrases yet. Paste and save a script to get started.</div>
+        <div class="empty-text">No phrases yet. Paste and save a script to begin.</div>
       </div>
     `;
     return;
@@ -224,7 +261,6 @@ function displayEnhancedPhrases(phrasesArray) {
     phrasesContainer.appendChild(phraseCard);
   });
   
-  // Update metrics
   updateConfidenceMetrics();
 }
 
@@ -233,26 +269,24 @@ function createPhraseCard(phraseObj, index) {
   phraseCard.className = "phrase-card";
   phraseCard.dataset.id = phraseObj.id;
   phraseCard.dataset.confidence = phraseObj.confidence;
+  phraseCard.style.opacity = "0";
+  phraseCard.style.transform = "translateY(20px)";
   
   // Determine confidence color
-  let confidenceColor = "#5dcec3"; // Default accent color
-  if (phraseObj.confidence < 50) confidenceColor = "#f56565";
-  else if (phraseObj.confidence < 80) confidenceColor = "#ed8936";
+  let confidenceColor = "var(--accent)";
+  if (phraseObj.confidence < 50) confidenceColor = "var(--secondary)";
+  else if (phraseObj.confidence < 80) confidenceColor = "var(--primary)";
   
   // Format practice time
   const practiceTimeText = phraseObj.practiceTime > 0 ? 
     `${phraseObj.practiceTime} min` : "Not practiced";
   
-  // Last practiced date
-  const lastPracticedText = phraseObj.lastPracticed ? 
-    formatDate(new Date(phraseObj.lastPracticed)) : "Never";
-  
   phraseCard.innerHTML = `
     <div class="phrase-content">
       <div class="phrase-text">${phraseObj.text}</div>
       <div class="phrase-meta">
-        <span><i class="far fa-clock"></i> ${practiceTimeText}</span>
-        <span><i class="fas fa-chart-line" style="color: ${confidenceColor}"></i> Confidence: ${phraseObj.confidence}%</span>
+        <span class="meta-item"><i class="far fa-clock"></i> ${practiceTimeText}</span>
+        <span class="meta-item"><i class="fas fa-wave-square" style="color: ${confidenceColor}"></i> ${phraseObj.confidence}%</span>
         <span class="phrase-tag">${phraseObj.tag}</span>
       </div>
     </div>
@@ -260,52 +294,44 @@ function createPhraseCard(phraseObj, index) {
       <button class="phrase-btn play-btn" title="Play phrase">
         <i class="fas fa-play"></i>
       </button>
-      <button class="phrase-btn practice-btn" title="Mark as practiced">
-        <i class="fas fa-check-circle"></i>
-      </button>
-      <button class="phrase-btn edit-btn" title="Edit phrase">
-        <i class="fas fa-edit"></i>
-      </button>
-      <button class="phrase-btn menu-btn" title="More options">
-        <i class="fas fa-ellipsis-h"></i>
+      <button class="phrase-btn check-btn" title="${phraseObj.practiced ? 'Mark as not practiced' : 'Mark as practiced'}">
+        <i class="${phraseObj.practiced ? 'fas' : 'far'} fa-check-circle"></i>
       </button>
     </div>
   `;
   
-  // Add event listeners to buttons
+  // Add event listeners
   const playBtn = phraseCard.querySelector('.play-btn');
-  const practiceBtn = phraseCard.querySelector('.practice-btn');
-  const editBtn = phraseCard.querySelector('.edit-btn');
-  const menuBtn = phraseCard.querySelector('.menu-btn');
+  const checkBtn = phraseCard.querySelector('.check-btn');
   
   playBtn.addEventListener('click', () => {
     handlePlayPhrase(phraseObj, playBtn);
   });
   
-  practiceBtn.addEventListener('click', () => {
-    handlePracticePhrase(phraseObj, practiceBtn, index);
+  checkBtn.addEventListener('click', () => {
+    handlePracticePhrase(phraseObj, checkBtn, index);
   });
   
-  editBtn.addEventListener('click', () => {
-    handleEditPhrase(phraseObj, index);
+  // Add hover effect for the whole card
+  phraseCard.addEventListener('mouseenter', () => {
+    phraseCard.style.transform = 'translateY(-4px)';
   });
   
-  menuBtn.addEventListener('click', (e) => {
-    showPhraseMenu(e, phraseObj, index);
+  phraseCard.addEventListener('mouseleave', () => {
+    phraseCard.style.transform = 'translateY(0)';
   });
   
   return phraseCard;
 }
 
-// --- Enhanced Interaction Handlers ---
+// --- Interaction Handlers ---
 
 function handlePlayPhrase(phraseObj, button) {
   const icon = button.querySelector('i');
   
-  // Visual feedback
-  button.style.background = 'var(--primary)';
-  button.style.color = 'white';
-  icon.className = 'fas fa-volume-up';
+  // Animate play button
+  button.style.transform = 'scale(1.2)';
+  button.style.boxShadow = '0 8px 25px rgba(122, 197, 211, 0.4)';
   
   // Speak the phrase
   speakFrench(phraseObj.text);
@@ -313,7 +339,7 @@ function handlePlayPhrase(phraseObj, button) {
   // Track practice time
   const startTime = Date.now();
   
-  // Reset button after speech ends
+  // Check when speech ends
   const checkSpeechEnd = setInterval(() => {
     if (!speechSynthesis.speaking) {
       clearInterval(checkSpeechEnd);
@@ -321,28 +347,25 @@ function handlePlayPhrase(phraseObj, button) {
       const endTime = Date.now();
       const practiceSeconds = Math.round((endTime - startTime) / 1000);
       
-      // Add practice time
+      // Update phrase stats
       phraseObj.practiceTime += Math.round(practiceSeconds / 60);
       phraseObj.lastPracticed = new Date().toISOString();
       
-      // Update confidence (practice increases confidence)
+      // Increase confidence
       if (phraseObj.confidence < 100) {
-        phraseObj.confidence = Math.min(phraseObj.confidence + 5, 100);
+        phraseObj.confidence = Math.min(phraseObj.confidence + 10, 100);
       }
       
-      // Save updated phrases
+      // Save and update
       localStorage.setItem("phrases", JSON.stringify(phrases));
-      
-      // Update UI
       updatePhraseCard(phraseObj.id);
       updateProgressBar();
       
-      // Reset button
+      // Reset button animation
       setTimeout(() => {
-        button.style.background = '';
-        button.style.color = '';
-        icon.className = 'fas fa-play';
-      }, 500);
+        button.style.transform = '';
+        button.style.boxShadow = '';
+      }, 300);
     }
   }, 100);
 }
@@ -353,277 +376,141 @@ function handlePracticePhrase(phraseObj, button, index) {
   // Toggle practiced state
   phraseObj.practiced = !phraseObj.practiced;
   
+  // Animate button
+  button.style.transform = 'scale(1.1)';
+  
   if (phraseObj.practiced) {
     // Mark as practiced
     phraseObj.lastPracticed = new Date().toISOString();
-    phraseObj.confidence = Math.max(phraseObj.confidence, 30); // Minimum confidence when practiced
+    phraseObj.confidence = Math.max(phraseObj.confidence, 40);
     
-    // Visual feedback
+    // Update icon
+    icon.className = 'fas fa-check-circle';
+    
+    // Show success animation
     button.style.background = 'var(--accent)';
-    button.style.color = 'white';
-    icon.className = 'fas fa-check';
-    
-    showToast("Phrase marked as practiced!", "success");
     
     // Update progress
     currentProgress = Math.min(currentProgress + 1, totalPhrasesGoal);
-    localStorage.setItem("progress", currentProgress);
+    
+    showToast("Phrase practiced! ✨", "success");
     
   } else {
     // Mark as not practiced
+    icon.className = 'far fa-check-circle';
     button.style.background = '';
-    button.style.color = '';
-    icon.className = 'fas fa-check-circle';
     
     // Update progress
     currentProgress = Math.max(currentProgress - 1, 0);
-    localStorage.setItem("progress", currentProgress);
+    
+    showToast("Practice reset", "info");
   }
   
-  // Save updated phrases
+  // Save and update
+  localStorage.setItem("progress", currentProgress);
   localStorage.setItem("phrases", JSON.stringify(phrases));
   
-  // Update UI
   updatePhraseCard(phraseObj.id);
   updateProgressBar();
-}
-
-function handleEditPhrase(phraseObj, index) {
-  // Create modal or inline edit
-  const phraseCard = document.querySelector(`.phrase-card[data-id="${phraseObj.id}"]`);
-  const phraseTextElement = phraseCard.querySelector('.phrase-text');
-  const originalText = phraseTextElement.textContent;
   
-  // Replace with textarea for editing
-  const textarea = document.createElement('textarea');
-  textarea.className = 'phrase-edit-input';
-  textarea.value = originalText;
-  textarea.rows = 2;
-  
-  phraseTextElement.replaceWith(textarea);
-  textarea.focus();
-  
-  // Save on blur or Enter key
-  textarea.addEventListener('blur', saveEdit);
-  textarea.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      saveEdit();
-    }
-    if (e.key === 'Escape') {
-      cancelEdit(textarea, originalText);
-    }
-  });
-  
-  function saveEdit() {
-    const newText = textarea.value.trim();
-    if (newText && newText !== originalText) {
-      phraseObj.text = newText;
-      phraseObj.tag = getPhraseTag(newText);
-      
-      // Save to localStorage
-      localStorage.setItem("phrases", JSON.stringify(phrases));
-      
-      // Update UI
-      updatePhraseCard(phraseObj.id);
-      showToast("Phrase updated", "success");
-    } else {
-      cancelEdit(textarea, originalText);
-    }
-  }
-  
-  function cancelEdit(textareaElement, original) {
-    // Restore original text
-    const textElement = document.createElement('div');
-    textElement.className = 'phrase-text';
-    textElement.textContent = original;
-    textareaElement.replaceWith(textElement);
-  }
-}
-
-function showPhraseMenu(event, phraseObj, index) {
-  // In a real app, you would show a context menu here
-  // For now, we'll show a simple alert with options
-  const options = [
-    "Delete phrase",
-    "Duplicate phrase",
-    "Reset practice data",
-    "Add to favorites"
-  ];
-  
-  // Create a simple dropdown
-  const menu = document.createElement('div');
-  menu.className = 'phrase-menu';
-  menu.style.position = 'absolute';
-  menu.style.background = 'var(--bg-main)';
-  menu.style.border = '1px solid var(--border)';
-  menu.style.borderRadius = 'var(--radius-sm)';
-  menu.style.boxShadow = 'var(--shadow)';
-  menu.style.zIndex = '1000';
-  menu.style.padding = '8px 0';
-  
-  options.forEach(option => {
-    const item = document.createElement('div');
-    item.className = 'phrase-menu-item';
-    item.textContent = option;
-    item.style.padding = '8px 16px';
-    item.style.cursor = 'pointer';
-    item.style.transition = 'var(--transition)';
-    
-    item.addEventListener('mouseenter', () => {
-      item.style.background = 'var(--bg-hover)';
-    });
-    
-    item.addEventListener('mouseleave', () => {
-      item.style.background = '';
-    });
-    
-    item.addEventListener('click', () => {
-      handleMenuAction(option, phraseObj, index);
-      document.body.removeChild(menu);
-    });
-    
-    menu.appendChild(item);
-  });
-  
-  // Position menu near the button
-  const rect = event.target.getBoundingClientRect();
-  menu.style.top = `${rect.bottom + window.scrollY}px`;
-  menu.style.right = `${window.innerWidth - rect.right}px`;
-  
-  // Add to body and add click-outside listener
-  document.body.appendChild(menu);
-  
-  const closeMenu = (e) => {
-    if (!menu.contains(e.target) && e.target !== event.target) {
-      document.body.removeChild(menu);
-      document.removeEventListener('click', closeMenu);
-    }
-  };
-  
+  // Reset button animation
   setTimeout(() => {
-    document.addEventListener('click', closeMenu);
-  }, 10);
+    button.style.transform = '';
+  }, 300);
 }
 
-function handleMenuAction(action, phraseObj, index) {
-  switch(action) {
-    case "Delete phrase":
-      if (confirm("Are you sure you want to delete this phrase?")) {
-        phrases.splice(index, 1);
-        localStorage.setItem("phrases", JSON.stringify(phrases));
-        displayEnhancedPhrases(phrases);
-        updateProgressBar();
-        showToast("Phrase deleted", "info");
-      }
-      break;
-      
-    case "Duplicate phrase":
-      const duplicate = {...phraseObj, id: Date.now()};
-      phrases.splice(index + 1, 0, duplicate);
-      localStorage.setItem("phrases", JSON.stringify(phrases));
-      displayEnhancedPhrases(phrases);
-      showToast("Phrase duplicated", "success");
-      break;
-      
-    case "Reset practice data":
-      phraseObj.practiced = false;
-      phraseObj.practiceTime = 0;
-      phraseObj.confidence = 0;
-      phraseObj.lastPracticed = null;
-      localStorage.setItem("phrases", JSON.stringify(phrases));
-      updatePhraseCard(phraseObj.id);
-      updateProgressBar();
-      showToast("Practice data reset", "info");
-      break;
-      
-    case "Add to favorites":
-      phraseObj.favorite = !phraseObj.favorite;
-      localStorage.setItem("phrases", JSON.stringify(phrases));
-      updatePhraseCard(phraseObj.id);
-      showToast(phraseObj.favorite ? "Added to favorites" : "Removed from favorites", "success");
-      break;
-  }
-}
-
-// --- Additional Enhanced Features ---
+// --- Additional Features ---
 
 function handleStartPractice() {
   if (phrases.length === 0) {
-    showToast("No phrases to practice. Save a script first.", "warning");
+    showToast("Save a script first", "info");
     return;
   }
   
-  // Filter phrases with low confidence
-  const lowConfidencePhrases = phrases.filter(p => p.confidence < 70);
+  // Find phrases needing practice
+  const needsPractice = phrases.filter(p => p.confidence < 70);
   
-  if (lowConfidencePhrases.length === 0) {
-    showToast("All phrases have good confidence scores! Great job!", "success");
+  if (needsPractice.length === 0) {
+    showToast("All phrases are well practiced! 🎉", "success");
     return;
   }
   
-  // Start with the lowest confidence phrase
-  const sortedByConfidence = [...phrases].sort((a, b) => a.confidence - b.confidence);
-  const targetPhrase = sortedByConfidence[0];
+  // Sort by confidence and start with lowest
+  const sorted = [...needsPractice].sort((a, b) => a.confidence - b.confidence);
+  const targetPhrase = sorted[0];
   
-  // Find and highlight the phrase card
+  // Find and highlight the card
   const phraseCard = document.querySelector(`.phrase-card[data-id="${targetPhrase.id}"]`);
   if (phraseCard) {
-    phraseCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    phraseCard.style.boxShadow = '0 0 0 3px var(--accent)';
+    // Scroll to phrase
+    phraseCard.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'center' 
+    });
+    
+    // Highlight animation
+    phraseCard.style.boxShadow = '0 0 0 3px var(--accent), var(--shadow-light)';
+    phraseCard.style.transform = 'scale(1.02)';
     
     setTimeout(() => {
       phraseCard.style.boxShadow = '';
+      phraseCard.style.transform = '';
     }, 3000);
   }
   
   // Speak the phrase
-  speakFrench(targetPhrase.text);
+  setTimeout(() => {
+    speakFrench(targetPhrase.text);
+  }, 1000);
   
-  showToast(`Starting practice with lowest confidence phrase (${targetPhrase.confidence}%)`, "info");
+  showToast(`Starting with "${targetPhrase.tag}" phrase`, "info");
 }
 
-function handleLoadPrevious() {
-  const previousScripts = JSON.parse(localStorage.getItem("previousScripts") || "[]");
+function handleImportScript() {
+  // Create file input
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.txt,.md,.doc,.docx';
+  fileInput.style.display = 'none';
   
-  if (previousScripts.length === 0) {
-    showToast("No previous scripts found", "info");
-    return;
-  }
+  fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      scriptInput.value = e.target.result;
+      charCount.textContent = e.target.result.length;
+      showToast("Script imported successfully", "success");
+    };
+    reader.readAsText(file);
+  };
   
-  // Show a simple selector (in a real app, you'd use a modal)
-  const scriptList = previousScripts.map((script, i) => 
-    `${i + 1}. ${script.substring(0, 50)}...`
-  ).join('\n');
-  
-  const selection = prompt(`Previous scripts:\n\n${scriptList}\n\nEnter number to load:`);
-  const index = parseInt(selection) - 1;
-  
-  if (index >= 0 && index < previousScripts.length) {
-    scriptInput.value = previousScripts[index];
-    charCount.textContent = previousScripts[index].length;
-    showToast("Script loaded", "success");
-  }
+  document.body.appendChild(fileInput);
+  fileInput.click();
+  document.body.removeChild(fileInput);
 }
 
 function handleFilterPhrases() {
-  // Toggle filter state
   filterBtn.classList.toggle('active');
   
   if (filterBtn.classList.contains('active')) {
-    // Show only unpracticed phrases
+    // Filter to show only unpracticed phrases
     const unpracticed = phrases.filter(p => !p.practiced);
     displayEnhancedPhrases(unpracticed);
     showToast(`Showing ${unpracticed.length} unpracticed phrases`, "info");
+    filterBtn.style.background = 'var(--primary)';
+    filterBtn.style.color = 'white';
   } else {
     // Show all phrases
     displayEnhancedPhrases(phrases);
     showToast("Showing all phrases", "info");
+    filterBtn.style.background = '';
+    filterBtn.style.color = '';
   }
 }
 
 function handleSortPhrases() {
-  // Toggle sort state
   sortBtn.classList.toggle('active');
   
   let sortedPhrases = [...phrases];
@@ -631,35 +518,23 @@ function handleSortPhrases() {
   if (sortBtn.classList.contains('active')) {
     // Sort by confidence (lowest first)
     sortedPhrases.sort((a, b) => a.confidence - b.confidence);
-    displayEnhancedPhrases(sortedPhrases);
+    sortBtn.innerHTML = '<i class="fas fa-sort-amount-up"></i>';
     showToast("Sorted by confidence (low to high)", "info");
   } else {
-    // Sort by tag or original order
-    sortedPhrases.sort((a, b) => a.tag.localeCompare(b.tag));
-    displayEnhancedPhrases(sortedPhrases);
-    showToast("Sorted by category", "info");
+    // Sort by creation date (newest first)
+    sortedPhrases.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    sortBtn.innerHTML = '<i class="fas fa-sort-amount-down"></i>';
+    showToast("Sorted by recent", "info");
   }
+  
+  displayEnhancedPhrases(sortedPhrases);
+  sortBtn.style.transform = 'rotate(180deg)';
+  setTimeout(() => {
+    sortBtn.style.transform = '';
+  }, 300);
 }
 
 // --- Utility Functions ---
-
-function getPhraseTag(text) {
-  const lowerText = text.toLowerCase();
-  
-  if (lowerText.includes('bonjour') || lowerText.includes('bienvenue')) {
-    return "Greeting";
-  } else if (lowerText.includes('question') || lowerText.includes('poser')) {
-    return "Interaction";
-  } else if (lowerText.includes('œuvre') || lowerText.includes('peinture') || lowerText.includes('salle')) {
-    return "Description";
-  } else if (lowerText.includes('commencer') || lowerText.includes('visite')) {
-    return "Introduction";
-  } else if (lowerText.includes('merci') || lowerText.includes('au revoir')) {
-    return "Closing";
-  } else {
-    return "General";
-  }
-}
 
 function updatePhraseCard(phraseId) {
   const phraseObj = phrases.find(p => p.id == phraseId);
@@ -669,73 +544,168 @@ function updatePhraseCard(phraseId) {
   if (!phraseCard) return;
   
   // Update confidence display
-  const confidenceIcon = phraseCard.querySelector('.fa-chart-line');
-  const confidenceText = phraseCard.querySelector('.phrase-meta span:nth-child(2)');
+  const confidenceElement = phraseCard.querySelector('.fa-wave-square');
+  const confidenceText = phraseCard.querySelector('.meta-item:nth-child(2)');
   
   // Update confidence color
-  let confidenceColor = "#5dcec3";
-  if (phraseObj.confidence < 50) confidenceColor = "#f56565";
-  else if (phraseObj.confidence < 80) confidenceColor = "#ed8936";
+  let confidenceColor = "var(--accent)";
+  if (phraseObj.confidence < 50) confidenceColor = "var(--secondary)";
+  else if (phraseObj.confidence < 80) confidenceColor = "var(--primary)";
   
-  if (confidenceIcon) confidenceIcon.style.color = confidenceColor;
-  if (confidenceText) confidenceText.innerHTML = `<i class="fas fa-chart-line" style="color: ${confidenceColor}"></i> Confidence: ${phraseObj.confidence}%`;
+  if (confidenceElement) confidenceElement.style.color = confidenceColor;
+  if (confidenceText) confidenceText.innerHTML = `<i class="fas fa-wave-square" style="color: ${confidenceColor}"></i> ${phraseObj.confidence}%`;
   
   // Update practice time
-  const practiceTimeText = phraseCard.querySelector('.phrase-meta span:nth-child(1)');
+  const practiceTimeElement = phraseCard.querySelector('.meta-item:nth-child(1)');
   const practiceTime = phraseObj.practiceTime > 0 ? `${phraseObj.practiceTime} min` : "Not practiced";
-  if (practiceTimeText) practiceTimeText.innerHTML = `<i class="far fa-clock"></i> ${practiceTime}`;
+  if (practiceTimeElement) practiceTimeElement.innerHTML = `<i class="far fa-clock"></i> ${practiceTime}`;
   
-  // Update tag if needed
-  const tagElement = phraseCard.querySelector('.phrase-tag');
-  if (tagElement) tagElement.textContent = phraseObj.tag;
+  // Update check button
+  const checkBtn = phraseCard.querySelector('.check-btn');
+  const checkIcon = checkBtn.querySelector('i');
+  checkBtn.title = phraseObj.practiced ? 'Mark as not practiced' : 'Mark as practiced';
+  checkIcon.className = phraseObj.practiced ? 'fas fa-check-circle' : 'far fa-check-circle';
+  
+  if (phraseObj.practiced) {
+    checkBtn.style.background = 'var(--accent)';
+    checkBtn.style.color = 'white';
+  } else {
+    checkBtn.style.background = '';
+    checkBtn.style.color = '';
+  }
 }
 
 function updateProgressBar() {
   const progressFill = document.querySelector('.progress-fill');
   const progressPercent = document.querySelector('.progress-percent');
-  const progressDetail = document.querySelector('.progress-detail');
+  const progressDetail = document.querySelector('.progress-detail span');
   
   if (!progressFill || !progressPercent || !progressDetail) return;
   
-  // Calculate practiced phrases
-  const practicedPhrases = phrases.filter(p => p.practiced).length;
-  currentProgress = practicedPhrases;
-  localStorage.setItem("progress", currentProgress);
-  
   const progressPercentage = Math.round((currentProgress / totalPhrasesGoal) * 100);
   
-  // Update progress bar
+  // Animate progress bar
   progressFill.style.width = `${progressPercentage}%`;
   progressPercent.textContent = `${progressPercentage}%`;
-  progressDetail.innerHTML = `<i class="fas fa-check-circle progress-icon"></i> ${currentProgress} of ${totalPhrasesGoal} phrases practiced today`;
+  progressDetail.textContent = `${currentProgress} of ${totalPhrasesGoal} phrases practiced today`;
+  
+  // Animate number
+  progressPercent.style.transform = 'scale(1.2)';
+  setTimeout(() => {
+    progressPercent.style.transform = '';
+  }, 300);
 }
 
 function updateConfidenceMetrics() {
   if (phrases.length === 0) return;
   
-  // Calculate average confidence
   const totalConfidence = phrases.reduce((sum, p) => sum + p.confidence, 0);
   const avgConfidence = Math.round(totalConfidence / phrases.length);
   
-  // You could update a confidence display element here
-  console.log(`Average confidence: ${avgConfidence}%`);
+  // Update breathing animation speed based on average confidence
+  if (breathCircle) {
+    const duration = 10 - (avgConfidence / 15); // Slower breathing for higher confidence
+    breathCircle.style.animationDuration = `${duration}s`;
+  }
 }
 
-function formatDate(date) {
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+function getPhraseTag(text) {
+  const lowerText = text.toLowerCase();
+  
+  if (lowerText.includes('bonjour') || lowerText.includes('bienvenue')) {
+    return "Greeting";
+  } else if (lowerText.includes('question') || lowerText.includes('poser')) {
+    return "Interaction";
+  } else if (lowerText.includes('œuvre') || lowerText.includes('peinture')) {
+    return "Art";
+  } else if (lowerText.includes('salle') || lowerText.includes('commencer')) {
+    return "Introduction";
+  } else if (lowerText.includes('merci') || lowerText.includes('au revoir')) {
+    return "Closing";
+  } else if (lowerText.includes('histoire') || lowerText.includes('année')) {
+    return "History";
+  } else {
+    return "General";
+  }
+}
+
+function updateDailyIntention() {
+  const intentions = [
+    "Speak with gentle confidence",
+    "Breathe before each phrase",
+    "Focus on clarity over speed",
+    "Embrace pauses naturally",
+    "Feel the words as you speak",
+    "Project calm assurance",
+    "Connect with your audience",
+    "Trust your preparation"
+  ];
+  
+  const randomIntention = intentions[Math.floor(Math.random() * intentions.length)];
+  document.querySelector('.intention-content p').textContent = randomIntention;
+  
+  // Animate intention change
+  const intentionIcon = document.querySelector('.intention-icon');
+  intentionIcon.style.transform = 'rotate(360deg)';
+  setTimeout(() => {
+    intentionIcon.style.transform = '';
+  }, 500);
+  
+  showToast("New intention set", "success");
+}
+
+function saveToHistory(scriptText) {
+  const history = JSON.parse(localStorage.getItem("scriptHistory") || "[]");
+  history.unshift({
+    text: scriptText.substring(0, 100) + (scriptText.length > 100 ? "..." : ""),
+    date: new Date().toISOString(),
+    fullText: scriptText
+  });
+  
+  // Keep only last 10 scripts
+  localStorage.setItem("scriptHistory", JSON.stringify(history.slice(0, 10)));
+}
+
+// --- Breathing Animation ---
+
+function startBreathingAnimation() {
+  if (!breathCircle) return;
+  
+  // Start with calm breathing
+  breathCircle.style.animation = 'breathe 8s infinite ease-in-out';
+}
+
+function pauseBreathingAnimation() {
+  if (!breathCircle) return;
+  breathCircle.style.animationPlayState = 'paused';
+}
+
+function resumeBreathingAnimation() {
+  if (!breathCircle) return;
+  breathCircle.style.animationPlayState = 'running';
+}
+
+// --- Animation Effects ---
+
+function animatePhraseCards() {
+  const cards = document.querySelectorAll('.phrase-card');
+  cards.forEach((card, index) => {
+    setTimeout(() => {
+      card.style.opacity = "1";
+      card.style.transform = "translateY(0)";
+      card.style.transition = "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
+    }, index * 100);
   });
 }
+
+// --- Toast Notifications ---
 
 function showToast(message, type = "info") {
   // Remove existing toast
   const existingToast = document.querySelector('.toast');
   if (existingToast) existingToast.remove();
   
-  // Create toast element
+  // Create toast
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.innerHTML = `
@@ -746,40 +716,16 @@ function showToast(message, type = "info") {
     <button class="toast-close">&times;</button>
   `;
   
-  // Style the toast
-  toast.style.position = 'fixed';
-  toast.style.bottom = '20px';
-  toast.style.right = '20px';
-  toast.style.background = getToastColor(type);
-  toast.style.color = 'white';
-  toast.style.padding = '12px 20px';
-  toast.style.borderRadius = 'var(--radius)';
-  toast.style.boxShadow = 'var(--shadow)';
-  toast.style.display = 'flex';
-  toast.style.alignItems = 'center';
-  toast.style.justifyContent = 'space-between';
-  toast.style.gap = '10px';
-  toast.style.zIndex = '10000';
-  toast.style.maxWidth = '350px';
-  toast.style.animation = 'toastSlideIn 0.3s ease';
-  
-  // Close button
-  const closeBtn = toast.querySelector('.toast-close');
-  closeBtn.style.background = 'transparent';
-  closeBtn.style.border = 'none';
-  closeBtn.style.color = 'white';
-  closeBtn.style.cursor = 'pointer';
-  closeBtn.style.fontSize = '1.2rem';
-  closeBtn.style.padding = '0';
-  
-  closeBtn.addEventListener('click', () => {
-    toast.remove();
-  });
-  
-  // Add to document
   document.body.appendChild(toast);
   
-  // Auto remove after 4 seconds
+  // Add close event
+  const closeBtn = toast.querySelector('.toast-close');
+  closeBtn.addEventListener('click', () => {
+    toast.style.animation = 'toastSlideOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  });
+  
+  // Auto remove
   setTimeout(() => {
     if (toast.parentNode) {
       toast.style.animation = 'toastSlideOut 0.3s ease';
@@ -788,44 +734,17 @@ function showToast(message, type = "info") {
       }, 300);
     }
   }, 4000);
-  
-  // Add CSS animations
-  if (!document.querySelector('#toast-styles')) {
-    const style = document.createElement('style');
-    style.id = 'toast-styles';
-    style.textContent = `
-      @keyframes toastSlideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      @keyframes toastSlideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
 }
 
 function getToastIcon(type) {
   switch(type) {
     case 'success': return 'fa-check-circle';
-    case 'warning': return 'fa-exclamation-triangle';
-    case 'error': return 'fa-times-circle';
+    case 'error': return 'fa-exclamation-circle';
     default: return 'fa-info-circle';
   }
 }
 
-function getToastColor(type) {
-  switch(type) {
-    case 'success': return '#38a169';
-    case 'warning': return '#d69e2e';
-    case 'error': return '#e53e3e';
-    default: return '#4a6cf7';
-  }
-}
-
-// Export for debugging (optional)
+// Export for debugging
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     splitIntoPhrases,
