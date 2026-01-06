@@ -2,45 +2,59 @@
 /* Calm Meditation & Relaxation Inspired Theme */
 
 :root {
-  /* Clean, Light Color Palette */
-  --bg-main: #FFFFFF;
-  --bg-alt: #F9FAFB;
-  --bg-hover: #F3F4F6;
-  --bg-modal: rgba(255, 255, 255, 0.97);
+  /* Clean Backgrounds - Almost White with Very Subtle Warmth */
+  --bg-main: #FEFEFE;
+  --bg-alt: #FAFAFA;
+  --bg-hover: #F5F5F5;
+  --bg-modal: rgba(254, 254, 254, 0.97);
   
-  /* Soft, Non-Distracting Accents */
-  --primary-soft: #E0F2FE;
-  --primary-light: #BAE6FD;
-  --primary: #38BDF8;
-  --primary-dark: #0EA5E9;
+  /* Neutral Pastel Color Palette */
+  --primary-soft: #F3F4F6;      /* Very light gray */
+  --primary-light: #E5E7EB;     /* Light gray */
+  --primary: #9CA3AF;           /* Medium gray */
+  --primary-dark: #6B7280;      /* Dark gray */
   
-  --secondary-soft: #F0F9FF;
-  --secondary-light: #E0F2FE;
-  --secondary: #7DD3FC;
-  --secondary-dark: #0EA5E9;
+  /* Soft Pastel Accents - Inspired by Headspace/Calm */
+  --secondary-soft: #F0F9FF;    /* Ice blue */
+  --secondary-light: #E0F2FE;   /* Light sky blue */
+  --secondary: #BAE6FD;         /* Soft sky blue */
+  --secondary-dark: #7DD3FC;    /* Sky blue */
   
-  --accent-soft: #F0FDF4;
-  --accent-light: #DCFCE7;
-  --accent: #34D399;
-  --accent-dark: #10B981;
+  --accent-soft: #F0FDF4;       /* Mint cream */
+  --accent-light: #DCFCE7;      /* Light mint */
+  --accent: #BBF7D0;           /* Soft mint */
+  --accent-dark: #86EFAC;       /* Mint green */
   
+  /* Warm Pastel Accents */
+  --tertiary-soft: #FFF7ED;     /* Cream */
+  --tertiary-light: #FFEDD5;    /* Light peach */
+  --tertiary: #FED7AA;         /* Soft peach */
+  --tertiary-dark: #FDBA74;     /* Peach */
+  
+  /* Lavender Pastel */
+  --quaternary-soft: #FAF5FF;   /* Lavender cream */
+  --quaternary-light: #F3E8FF;  /* Light lavender */
+  --quaternary: #E9D5FF;       /* Soft lavender */
+  --quaternary-dark: #D8B4FE;   /* Lavender */
+  
+  /* Neutral Elements */
   --neutral-soft: #F8FAFC;
   --neutral-light: #F1F5F9;
   --neutral: #E2E8F0;
   --neutral-dark: #CBD5E1;
   
-  /* Text Colors - Soft Gray Scale */
-  --text-main: #1F2937;
-  --text-secondary: #6B7280;
-  --text-muted: #9CA3AF;
-  --text-light: #D1D5DB;
+  /* Text Colors - Soft, Readable Grays */
+  --text-main: #374151;         /* Dark gray for primary text */
+  --text-secondary: #6B7280;    /* Medium gray for secondary */
+  --text-muted: #9CA3AF;        /* Light gray for muted */
+  --text-light: #D1D5DB;        /* Very light gray */
   
   /* UI Colors */
-  --border: #E5E7EB;
-  --border-light: #F3F4F6;
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.02);
-  --shadow-soft: 0 1px 4px rgba(0, 0, 0, 0.01);
+  --border: #E5E7EB;            /* Soft gray border */
+  --border-light: #F3F4F6;      /* Very light gray border */
+  --shadow: 0 4px 20px rgba(107, 114, 128, 0.04);
+  --shadow-light: 0 2px 8px rgba(107, 114, 128, 0.02);
+  --shadow-soft: 0 1px 4px rgba(107, 114, 128, 0.01);
   
   /* Transitions */
   --transition-slow: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -56,48 +70,56 @@
   --radius-round: 50%;
 }
 
-/* Dark Mode - Keeping it clean */
+/* Dark Mode - Soft Gray Theme */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Light Gray Backgrounds Instead of Dark Blue */
-    --bg-main: #1A1A1A;
-    --bg-alt: #222222;
-    --bg-hover: #2A2A2A;
-    --bg-modal: rgba(26, 26, 26, 0.97);
+    /* Dark Gray Backgrounds */
+    --bg-main: #1F1F1F;
+    --bg-alt: #262626;
+    --bg-hover: #333333;
+    --bg-modal: rgba(31, 31, 31, 0.97);
     
-    /* Keep the same accent colors but with lighter backgrounds */
-    --primary-soft: rgba(56, 189, 248, 0.08);
-    --primary-light: rgba(56, 189, 248, 0.15);
-    --primary: #38BDF8;
-    --primary-dark: #0EA5E9;
+    /* Muted Pastels for Dark Mode */
+    --primary-soft: rgba(156, 163, 175, 0.08);
+    --primary-light: rgba(156, 163, 175, 0.15);
+    --primary: #9CA3AF;
+    --primary-dark: #D1D5DB;
     
-    --secondary-soft: rgba(125, 211, 252, 0.08);
-    --secondary-light: rgba(125, 211, 252, 0.15);
-    --secondary: #7DD3FC;
-    --secondary-dark: #0EA5E9;
+    --secondary-soft: rgba(186, 230, 253, 0.08);
+    --secondary-light: rgba(186, 230, 253, 0.15);
+    --secondary: #BAE6FD;
+    --secondary-dark: #7DD3FC;
     
-    --accent-soft: rgba(52, 211, 153, 0.08);
-    --accent-light: rgba(52, 211, 153, 0.15);
-    --accent: #34D399;
-    --accent-dark: #10B981;
+    --accent-soft: rgba(187, 247, 208, 0.08);
+    --accent-light: rgba(187, 247, 208, 0.15);
+    --accent: #BBF7D0;
+    --accent-dark: #86EFAC;
     
-    /* Light Gray Neutrals */
-    --neutral-soft: #222222;
-    --neutral-light: #2A2A2A;
-    --neutral: #333333;
-    --neutral-dark: #444444;
+    --tertiary-soft: rgba(254, 215, 170, 0.08);
+    --tertiary-light: rgba(254, 215, 170, 0.15);
+    --tertiary: #FED7AA;
+    --tertiary-dark: #FDBA74;
     
-    /* Softer Text Colors */
-    --text-main: #F0F0F0;
-    --text-secondary: #BBBBBB;
-    --text-muted: #888888;
-    --text-light: #666666;
+    --quaternary-soft: rgba(233, 213, 255, 0.08);
+    --quaternary-light: rgba(233, 213, 255, 0.15);
+    --quaternary: #E9D5FF;
+    --quaternary-dark: #D8B4FE;
     
-    /* Lighter Borders */
-    --border: #333333;
-    --border-light: #2A2A2A;
+    /* Neutrals */
+    --neutral-soft: #262626;
+    --neutral-light: #333333;
+    --neutral: #404040;
+    --neutral-dark: #4D4D4D;
     
-    /* Softer Shadows */
+    /* Text Colors */
+    --text-main: #F3F4F6;
+    --text-secondary: #D1D5DB;
+    --text-muted: #9CA3AF;
+    --text-light: #6B7280;
+    
+    /* UI Colors */
+    --border: #404040;
+    --border-light: #333333;
     --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.05);
     --shadow-soft: 0 1px 4px rgba(0, 0, 0, 0.02);
@@ -193,7 +215,7 @@ body {
   position: relative;
   z-index: 1;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 /* Lighten the sections */
